@@ -76,32 +76,36 @@ class WebpackSvgStore {
 
   apply(compiler) {
     // AST parser
-    compiler.plugin('compilation', (compilation, data) => {
+    compiler.hooks.compilation.tap(
+      'WebpackSvgStore',
+      (compilation, data) => {
       
-      compilation.dependencyFactories.set(ConstDependency, new NullFactory());
-      compilation.dependencyTemplates.set(ConstDependency, new ConstDependency.Template());
-      
-      data.normalModuleFactory.plugin('parser', (parser, options) => {
-        parser.plugin('statement', (expr) => {
-          if (!expr.declarations || !expr.declarations.length) return;
-          const thisExpr = expr.declarations[0];
-          if ([
-            '__svg__',
-            '__sprite__',
-            '__svgstore__',
-            '__svgsprite__',
-            '__webpack_svgstore__'
-          ].indexOf(thisExpr.id.name) > -1) {
-            return this.createTaskContext(thisExpr, parser);
-          }
+        compilation.dependencyFactories.set(ConstDependency, new NullFactory());
+        compilation.dependencyTemplates.set(ConstDependency, new ConstDependency.Template());
+        
+        data.normalModuleFactory.plugin('parser', (parser, options) => {
+          parser.plugin('statement', (expr) => {
+            if (!expr.declarations || !expr.declarations.length) return;
+            const thisExpr = expr.declarations[0];
+            if ([
+              '__svg__',
+              '__sprite__',
+              '__svgstore__',
+              '__svgsprite__',
+              '__webpack_svgstore__'
+            ].indexOf(thisExpr.id.name) > -1) {
+              return this.createTaskContext(thisExpr, parser);
+            }
+          });
         });
-      });
-    });
-
+      }
+    )
 
     // save file to fs
-    compiler.plugin('emit', (compilation, callback) => {
-      async.forEach(Object.keys(this.tasks),
+    compiler.hooks.emit.tapAsync(
+      'WebpackSvgStore',
+      (compilation, callback) => {
+        async.forEach(Object.keys(this.tasks),
         (key, outerCallback) => {
           async.forEach(this.tasks[key],
             (task, callback) => {
@@ -111,18 +115,22 @@ class WebpackSvgStore {
                   return Buffer.byteLength(task.fileContent, 'utf8');
                 },
                 source: function () {
-                  return new Buffer(task.fileContent);
+                  return new Buffer.from(task.fileContent);
                 }
               };
               // done
               callback();
             }, outerCallback);
         }, callback);
-    });
+      }
+    );
 
-    compiler.plugin('done', () => {
-      this.tasks = {};
-    });
+    compiler.hooks.done.tap(
+      'WebpackSvgStore',
+      () => {
+        this.tasks = {};
+      }
+    )
   }
 }
 
