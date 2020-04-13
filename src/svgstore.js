@@ -76,15 +76,12 @@ class WebpackSvgStore {
 
   apply(compiler) {
     // AST parser
-    compiler.hooks.compilation.tap(
+    compiler.hooks.normalModuleFactory.tap(
       'WebpackSvgStore',
-      (compilation, data) => {
-      
-        compilation.dependencyFactories.set(ConstDependency, new NullFactory());
-        compilation.dependencyTemplates.set(ConstDependency, new ConstDependency.Template());
-        
-        data.normalModuleFactory.plugin('parser', (parser, options) => {
-          parser.plugin('statement', (expr) => {
+      factory => {
+        factory.hooks.parser.for('statement').tap(
+          'WebpackSvgStore',
+          (expr) => {
             if (!expr.declarations || !expr.declarations.length) return;
             const thisExpr = expr.declarations[0];
             if ([
@@ -96,8 +93,8 @@ class WebpackSvgStore {
             ].indexOf(thisExpr.id.name) > -1) {
               return this.createTaskContext(thisExpr, parser);
             }
-          });
-        });
+          }
+        )
       }
     )
 
