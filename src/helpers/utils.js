@@ -188,8 +188,10 @@ const _convertFilenameToId = function(filename) {
 const _filesMap = function(input, cb) {
   const data = input;
 
-  globby(data).then(function(fileList) {
+  globby(data).then((fileList) => {
     cb(fileList);
+  }).catch((error) => {
+    console.log('Globby-Error: ', error);
   });
 };
 
@@ -211,7 +213,7 @@ const _parseDomObject = function(data, filename, dom, prefix) {
   const id = _convertFilenameToId(filename);
   if (dom && dom[0]) {
     _defs(id, dom[0], data.defs);
-    _symbols(id, dom[0], data.symbols, prefix);
+    _symbols(id, _traverseDomForSvgElement(dom[0]), data.symbols, prefix);
   }
 
   return data;
@@ -258,6 +260,8 @@ const _parseFiles = function(files, options) {
     const handler = new parse.DomHandler(function(error, dom) {
       if (error) self.log(error);
       else data = _parseDomObject(data, filename, dom, options.prefix);
+    }, {
+      xmlMode: true
     });
 
     // lets create parser instance
@@ -294,6 +298,16 @@ const _hashByString = function(str) {
   
   return sha.digest('hex');
 };
+
+const _traverseDomForSvgElement = function(dom) {
+  let checkDom = dom;
+
+  if(!checkDom.name || checkDom.name !== 'svg') {
+    checkDom = _traverseDomForSvgElement(checkDom.next);
+  }
+
+  return checkDom;
+}
 
 /**
  * Create hash

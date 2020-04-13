@@ -8,13 +8,12 @@ var webpack = require('webpack');
 var mocha = require('mocha');
 var describe = mocha.describe;
 
-
 var Plugin = require('../svgstore');
 var utils = require('../helpers/utils');
 var configPath = path.join(__dirname, '..', '..', 'webpack.config.js');
 var config = require(configPath);
 
-var rawFilePath = path.resolve(__dirname, './svg/test_svg.svg');
+var rawFilePath = path.resolve(__dirname.replace(/\\/,'/'), './svg/test_svg.svg');
 var compiledFilePath = path.resolve(__dirname, './svg/compiled_svg.svg');
 
 
@@ -101,7 +100,19 @@ describe('utils.createSprite', function() {
       style: 'position:absolute; width: 0; height: 0'
     },
     loop: 2,
-    svgoOptions: {},
+    svgoOptions: {
+      plugins: [
+        {
+          removeDoctype: true,
+        },
+        {
+          removeXMLProcInst: true,
+        },
+        {
+          removeOffCanvasPaths: true,
+        },
+      ],
+    },
     prefix: 'icon-',
     name: 'sprite.[hash].svg',
     ajaxWrapper: false,
@@ -126,11 +137,10 @@ describe('utils.filesMap', function() {
     assert.typeOf(utils.filesMap, 'function');
   });
 
-  it('should callback filesMap function', function(done) {
-    utils.filesMap(path.join(__dirname, 'svg', '**', '*.svg'), function(items) {
+  it('should callback filesMap function', function() {
+    utils.filesMap(path.posix.join(__dirname.replace(/\\/g, '/'), 'svg', '**', '*.svg'), function(items) {
       assert.isArray(items);
       assert(items.length > 0, 'Files array must be more than 0');
-      done();
     });
   });
 });
