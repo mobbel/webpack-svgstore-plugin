@@ -17,7 +17,6 @@ const _ = require('lodash');
 const path = require('path');
 const utils = require('./helpers/utils');
 const ConstDependency = require('webpack/lib/dependencies/ConstDependency');
-const NullFactory = require('webpack/lib/NullFactory');
 const async = require('async');
 
 class WebpackSvgStore {
